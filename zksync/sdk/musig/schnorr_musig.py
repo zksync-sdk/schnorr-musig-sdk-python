@@ -58,7 +58,7 @@ class SchnorrMusig:
         else:
             raise SchnorrMusigError(code)
 
-    def verify_by_agg_public_keys(self, message: List[int], signature: AggregatedSignature, aggregated_public_keys: AggregatedPublicKey) -> bool:
+    def verify_by_agg_public_key(self, message: List[int], signature: AggregatedSignature, aggregated_public_keys: AggregatedPublicKey) -> bool:
         message_len = len(message)
         code = self.musig.schnorr_musig_verify((c_ubyte * message_len)(*message), c_size_t(message_len),
                                                aggregated_public_keys.data, c_size_t(len(aggregated_public_keys.data)),

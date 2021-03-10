@@ -187,13 +187,6 @@ def doc_watch():
 
         def on_modified(self, event):
             print_failure_message('Modification detected. Rebuilding docs.')
-            # # Strip off the path prefix.
-            # import os
-            # if event.src_path[len(os.getcwd()) + 1:].startswith(
-            #         CODE_DIRECTORY):
-            #     # sphinx-build doesn't always pick up changes on code files,
-            #     # even though they are used to generate the documentation. As
-            #     # a workaround, just clean before building.
             doc_html()
             print_success_message('Docs have been rebuilt.')
 

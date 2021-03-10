@@ -91,4 +91,4 @@ class TestSchnorrMusig:
         assert musig.verify_by_public_keys(TestSchnorrMusig.MSG, aggregated_signatures[0], all_public_keys)
 
         aggregated_public_key = musig.aggregate_public_keys(all_public_keys)
-        assert musig.verify_by_agg_public_keys(TestSchnorrMusig.MSG, aggregated_signatures[0], aggregated_public_key)
+        assert musig.verify_by_agg_public_key(TestSchnorrMusig.MSG, aggregated_signatures[0], aggregated_public_key)

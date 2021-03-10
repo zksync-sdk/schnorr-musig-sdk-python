@@ -1,5 +1,3 @@
-from ctypes import c_size_t
-from ctypes import c_ubyte
 from typing import List
 
 from zksync.sdk.musig.schnorr_musig_error import SchnorrMusigError
@@ -17,39 +15,28 @@ class SchnorrMusig:
     def __init__(self) -> None:
         self.musig = SchnorrMusigLoader.load()
 
-    def create_signer_from_keys(self, public_keys: List[List[int]], position: int) -> SchnorrMusigSigner:
-        encoded_public_keys = []
+    def create_signer_from_keys(self, public_keys: List[bytes], position: int) -> SchnorrMusigSigner:
+        encoded_public_keys = bytes()
         for public_key in public_keys:
             encoded_public_keys += public_key
-        encoded_public_keys_len = len(encoded_public_keys)
-        signer = self.musig.schnorr_musig_new_signer((c_ubyte * encoded_public_keys_len)(*encoded_public_keys),
-                                                     c_size_t(encoded_public_keys_len), c_size_t(position))
 
+        signer = self.musig.schnorr_musig_new_signer(encoded_public_keys, len(encoded_public_keys), position)
         return SchnorrMusigSigner(self.musig, signer, public_keys[position])
 
-    def create_signer_from_encoded_keys(self, encoded_public_keys: List[int], position: int) -> SchnorrMusigSigner:
-        public_keys_len = len(encoded_public_keys)
-        signer = self.musig.schnorr_musig_new_signer((c_ubyte * public_keys_len)(*encoded_public_keys),
-                                                     c_size_t(public_keys_len), c_size_t(position))
+    def create_signer_from_encoded_keys(self, encoded_public_keys: bytes, position: int) -> SchnorrMusigSigner:
+        signer = self.musig.schnorr_musig_new_signer(encoded_public_keys, len(encoded_public_keys), position)
         start_index = position * STANDARD_ENCODING_LENGTH
         public_key = encoded_public_keys[start_index: start_index + STANDARD_ENCODING_LENGTH]
-
         return SchnorrMusigSigner(self.musig, signer, public_key)
 
-    def create_signer_from_key(self, public_key: List[int]) -> SchnorrMusigSigner:
-        public_key_len = len(public_key)
-        signer = self.musig.schnorr_musig_new_signer((c_ubyte * public_key_len)(*public_key),
-                                                     c_size_t(public_key_len), c_size_t(0))
-
+    def create_signer_from_key(self, public_key: bytes) -> SchnorrMusigSigner:
+        signer = self.musig.schnorr_musig_new_signer(public_key, len(public_key), 0)
         return SchnorrMusigSigner(self.musig, signer, public_key)
 
-    def verify_by_public_keys(self, message: List[int], signature: AggregatedSignature, public_keys: List[int]) -> bool:
-        message_len = len(message)
-        public_keys_len = len(public_keys)
+    def verify_by_public_keys(self, message: bytes, signature: AggregatedSignature, public_keys: bytes) -> bool:
 
-        code = self.musig.schnorr_musig_verify((c_ubyte * message_len)(*message), c_size_t(message_len),
-                                               (c_ubyte * public_keys_len)(*public_keys), c_size_t(public_keys_len),
-                                               signature.data, c_size_t(len(signature.data)))
+        code = self.musig.schnorr_musig_verify(message, len(message), public_keys, len(public_keys), signature.data,
+                                               len(signature.data))
 
         if code == MusigRes.OK:
             return True
@@ -58,11 +45,10 @@ class SchnorrMusig:
         else:
             raise SchnorrMusigError(code)
 
-    def verify_by_agg_public_key(self, message: List[int], signature: AggregatedSignature, aggregated_public_keys: AggregatedPublicKey) -> bool:
-        message_len = len(message)
-        code = self.musig.schnorr_musig_verify((c_ubyte * message_len)(*message), c_size_t(message_len),
-                                               aggregated_public_keys.data, c_size_t(len(aggregated_public_keys.data)),
-                                               signature.data, c_size_t(len(signature.data)))
+    def verify_by_agg_public_key(self, message: bytes, signature: AggregatedSignature,
+                                 aggregated_public_keys: AggregatedPublicKey) -> bool:
+        code = self.musig.schnorr_musig_verify(message, len(message), aggregated_public_keys.data,
+                                               len(aggregated_public_keys.data), signature.data, len(signature.data))
 
         if code == MusigRes.OK:
             return True
@@ -72,12 +58,10 @@ class SchnorrMusig:
             raise SchnorrMusigError(code)
         pass
 
-    def aggregate_public_keys(self, public_keys: List[int]) -> AggregatedPublicKey:
-        public_keys_len = len(public_keys)
+    def aggregate_public_keys(self, public_keys: bytes) -> AggregatedPublicKey:
 
         aggregated_public_key = AggregatedPublicKey()
-        code = self.musig.schnorr_musig_aggregate_pubkeys((c_ubyte * public_keys_len)(*public_keys),
-                                                          c_size_t(public_keys_len),
+        code = self.musig.schnorr_musig_aggregate_pubkeys(public_keys, len(public_keys),
                                                           AggregatedPublicKeyPointer(aggregated_public_key))
 
         if code != MusigRes.OK:

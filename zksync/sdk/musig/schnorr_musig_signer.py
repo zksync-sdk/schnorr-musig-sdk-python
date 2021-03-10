@@ -6,12 +6,12 @@ from zksync.sdk.musig.schnorr_musig_native import *
 
 class SchnorrMusigSigner:
 
-    def __init__(self, musig: SchnorrMusigNative, signer: MusigSignerPointer, public_key: List[int]) -> None:
+    def __init__(self, musig: SchnorrMusigNative, signer: MusigSignerPointer, public_key: bytes) -> None:
         self.musig = musig
         self.signer = signer
         self.public_key = public_key
 
-    def sign(self, private_key: List[int], message: List[int]) -> Signature:
+    def sign(self, private_key: bytes, message: bytes) -> Signature:
         private_key_len = len(private_key)
         message_len = len(message)
 
@@ -24,11 +24,13 @@ class SchnorrMusigSigner:
 
         return signature
 
-    def compute_precommitment(self, seed: List[int]) -> Precommitment:
-        seed_len = len(seed)
+    def compute_precommitment(self, seed: bytes) -> Precommitment:
+        seed_len = int(len(seed) / 4)
+        seed_data = [c_uint32(int.from_bytes(seed[index * 4: index * 4 + 4], byteorder='little')) for index in range(seed_len)]
+
         precommitment = Precommitment()
-        code = self.musig.schnorr_musig_compute_precommitment(self.signer, (c_uint32 * seed_len)(*seed),
-                                                              c_size_t(seed_len), PrecommitmentPointer(precommitment))
+        code = self.musig.schnorr_musig_compute_precommitment(
+            self.signer, (c_uint32 * seed_len)(*seed_data), seed_len, PrecommitmentPointer(precommitment))
 
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)

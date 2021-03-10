@@ -2,62 +2,49 @@ from zksync.sdk.musig.schnorr_musig import SchnorrMusig
 
 
 class TestSchnorrMusig:
-    SEED = [16807, 282475249, 1622650073, 984943658]
+    SEED = bytes.fromhex('a7410000f13ad610d9acb7602a0cb53a')
     MSG = 'hello'.encode()
 
     def test_single(self):
-        private_key = [1, 31, 91, -103, 8, 76, 92, 46, 45, 94, 99, 72, -114, 15, 113, 104, -43, -103, -91, -64, 31, -23,
-                       -2, -60, -55, -106, 5, 116, 61, -91, -24, 92]
-        public_key = [23, -100, 58, 89, 20, 125, 48, 49, 108, -120, 102, 40, -123, 35, 72, -55, -76, 42, 24, -72, 33, 8,
-                      74, -55, -17, 121, -67, 115, -23, -71, 78, -115]
+        private_key = bytes.fromhex('011f5b99084c5c2e2d5e63488e0f7168d599a5c01fe9fec4c99605743da5e85c')
+        public_key = bytes.fromhex('179c3a59147d30316c886628852348c9b42a18b821084ac9ef79bd73e9b94e8d')
 
         musig = SchnorrMusig()
         signer = musig.create_signer_from_key(public_key)
         precommitment = signer.compute_precommitment(TestSchnorrMusig.SEED)
-        assert '93ae6e6df739d76c088755078ed857e95119909c97bdd5cdc8aa12286abc0984' == bytearray(precommitment.data).hex()
+        assert '93ae6e6df739d76c088755078ed857e95119909c97bdd5cdc8aa12286abc0984' == bytes(precommitment.data).hex()
 
-        commitment = signer.receive_precommitments(precommitment);
-        assert 'a18005f171a323d022a625e71aa53864ca6d1851a1fc50585b7627fba3f6c69f' == bytearray(commitment.data).hex()
+        commitment = signer.receive_precommitments(precommitment)
+        assert 'a18005f171a323d022a625e71aa53864ca6d1851a1fc50585b7627fba3f6c69f' == bytes(commitment.data).hex()
 
         aggregated_commitment = signer.receive_commitments(commitment)
-        assert 'a18005f171a323d022a625e71aa53864ca6d1851a1fc50585b7627fba3f6c69f' == bytearray(
+        assert 'a18005f171a323d022a625e71aa53864ca6d1851a1fc50585b7627fba3f6c69f' == bytes(
             aggregated_commitment.data).hex()
 
         signature = signer.sign(private_key, TestSchnorrMusig.MSG)
-        assert '02bae431c052b9e4f7c9b511904a577c7ba5e035625879d5253440793337f7ff' == bytearray(signature.data).hex()
+        assert '02bae431c052b9e4f7c9b511904a577c7ba5e035625879d5253440793337f7ff' == bytes(signature.data).hex()
 
         aggregate_signature = signer.aggregate_signature(signature)
         assert musig.verify_by_public_keys(TestSchnorrMusig.MSG, aggregate_signature, public_key)
 
     def test_multiple(self):
         musig = SchnorrMusig()
-        private_keys = [
-            [1, 31, 91, -103, 8, 76, 92, 46, 45, 94, 99, 72, -114, 15, 113, 104, -43, -103, -91, -64, 31, -23, -2, -60,
-             -55, -106, 5, 116, 61, -91, -24, 92],
-            [5, -66, -6, 29, -59, -66, -72, -86, 116, -61, 72, -106, 111, 82, 84, 112, 43, -64, -87, 97, 62, 81, -98,
-             -77, -17, 47, -24, -60, 68, -12, 13, 51],
-            [3, -51, -119, 71, -87, 15, 115, -88, 117, 98, 53, 116, -8, -32, -29, -45, -58, -85, -40, -7, 54, 123, -91,
-             68, 51, -19, 2, -73, -90, 37, 51, -39],
-            [2, 85, 108, 35, 44, -5, 108, -126, 116, -84, 126, 46, 85, -2, 31, -121, -74, -34, -31, 25, -65, 98, -93,
-             -57, -124, 16, 45, -26, -62, 92, 37, 18],
-            [1, 121, 16, -119, -75, 59, -18, 104, 33, 71, -20, -68, 94, 38, 50, 83, 41, -94, 28, -119, 74, 98, 5, -121,
-             108, 88, 121, -115, 28, 38, -118, -28]
-        ]
+        private_keys = ['011f5b99084c5c2e2d5e63488e0f7168d599a5c01fe9fec4c99605743da5e85c',
+                        '05befa1dc5beb8aa74c348966f5254702bc0a9613e519eb3ef2fe8c444f40d33',
+                        '03cd8947a90f73a875623574f8e0e3d3c6abd8f9367ba54433ed02b7a62533d9',
+                        '02556c232cfb6c8274ac7e2e55fe1f87b6dee119bf62a3c784102de6c25c2512',
+                        '01791089b53bee682147ecbc5e26325329a21c894a6205876c58798d1c268ae4']
 
-        public_keys = [
-            [23, -100, 58, 89, 20, 125, 48, 49, 108, -120, 102, 40, -123, 35, 72, -55, -76, 42, 24, -72, 33, 8, 74, -55,
-             -17, 121, -67, 115, -23, -71, 78, -115],
-            [10, -12, -71, -92, -23, -30, -75, -92, -44, -48, -90, -46, -21, -102, -15, -102, -67, -99, -116, 95, 0,
-             -101, 80, -13, -47, 95, -86, 126, 112, 100, -10, -97],
-            [-50, -81, -40, -53, 21, -95, 0, -25, -83, 13, -29, -41, 63, 125, -52, -24, -71, -29, 36, 60, -73, -37, -42,
-             78, 59, 11, 10, 121, -102, -109, -77, -120],
-            [63, 6, 62, -21, 40, -71, 18, -96, 89, -4, -118, -116, 100, 33, -20, 89, -51, 45, -113, 42, 25, 64, 43, 9,
-             125, 120, -33, -118, 56, 100, -9, 15],
-            [40, 107, 64, 71, 20, -37, -122, 117, 29, -110, 92, 118, -49, 119, 7, 9, -105, -28, -120, 101, -100, 74,
-             -65, 116, -52, 114, -102, 55, 17, -68, 27, -92]
-        ]
+        public_keys = ['179c3a59147d30316c886628852348c9b42a18b821084ac9ef79bd73e9b94e8d',
+                       '0af4b9a4e9e2b5a4d4d0a6d2eb9af19abd9d8c5f009b50f3d15faa7e7064f69f',
+                       'ceafd8cb15a100e7ad0de3d73f7dcce8b9e3243cb7dbd64e3b0b0a799a93b388',
+                       '3f063eeb28b912a059fc8a8c6421ec59cd2d8f2a19402b097d78df8a3864f70f',
+                       '286b404714db86751d925c76cf77070997e488659c4abf74cc729a3711bc1ba4']
 
-        all_public_keys = []
+        public_keys = [bytes.fromhex(key) for key in public_keys]
+        private_keys = [bytes.fromhex(key) for key in private_keys]
+
+        all_public_keys = bytes()
         for publicKey in public_keys:
             all_public_keys += publicKey
 

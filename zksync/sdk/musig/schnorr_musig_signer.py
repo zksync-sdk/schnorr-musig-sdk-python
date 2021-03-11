@@ -1,7 +1,6 @@
-from typing import List
-
 from zksync.sdk.musig.schnorr_musig_error import SchnorrMusigError
 from zksync.sdk.musig.schnorr_musig_native import *
+from typing import List
 
 
 class SchnorrMusigSigner:
@@ -11,22 +10,19 @@ class SchnorrMusigSigner:
         self.signer = signer
         self.public_key = public_key
 
-    def sign(self, private_key: bytes, message: bytes) -> Signature:
-        private_key_len = len(private_key)
-        message_len = len(message)
-
+    def sign(self, private_key: bytes, message: bytes) -> bytes:
         signature = Signature()
-        code = self.musig.schnorr_musig_sign(self.signer, (c_ubyte * private_key_len)(*private_key),
-                                             c_size_t(private_key_len), (c_ubyte * message_len)(*message),
-                                             c_size_t(message_len), SignaturePointer(signature))
+        code = self.musig.schnorr_musig_sign(self.signer, private_key, len(private_key), message, len(message),
+                                             SignaturePointer(signature))
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
 
-        return signature
+        return bytes(signature.data)
 
-    def compute_precommitment(self, seed: bytes) -> Precommitment:
+    def compute_precommitment(self, seed: bytes) -> bytes:
         seed_len = int(len(seed) / 4)
-        seed_data = [c_uint32(int.from_bytes(seed[index * 4: index * 4 + 4], byteorder='little')) for index in range(seed_len)]
+        seed_data = [c_uint32(int.from_bytes(seed[index * 4: index * 4 + 4], byteorder='little')) for index in
+                     range(seed_len)]
 
         precommitment = Precommitment()
         code = self.musig.schnorr_musig_compute_precommitment(
@@ -35,57 +31,49 @@ class SchnorrMusigSigner:
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
 
-        return precommitment
+        return bytes(precommitment.data)
 
-    def receive_precommitments(self, *precommitments: Precommitment) -> Commitment:
-        precommitments_data = []
+    def receive_precommitments(self, *precommitments: bytes) -> bytes:
+        precommitments_data = bytes()
         for precommitment in precommitments:
-            precommitments_data += [*precommitment.data]
-        precommitments_data_len = len(precommitments_data)
-
+            precommitments_data += precommitment
 
         commitment = Commitment()
-        code = self.musig.schnorr_musig_receive_precommitments(self.signer, (c_ubyte * precommitments_data_len)(
-            *precommitments_data), c_size_t(precommitments_data_len), CommitmentPointer(commitment))
+        code = self.musig.schnorr_musig_receive_precommitments(self.signer, precommitments_data,
+                                                               len(precommitments_data), CommitmentPointer(commitment))
 
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
 
-        return commitment
+        return bytes(commitment.data)
 
-    def receive_commitments(self, *commitments: Commitment) -> AggregatedCommitment:
-        commitments_data = []
+    def receive_commitments(self, *commitments: bytes) -> bytes:
+        commitments_data = bytes()
         for commitment in commitments:
-            commitments_data += [*commitment.data]
-        commitments_data_len = len(commitments_data)
+            commitments_data += commitment
 
         aggregated_commitment = AggregatedCommitment()
-        code = self.musig.schnorr_musig_receive_commitments(self.signer,
-                                                            (c_ubyte * commitments_data_len)(*commitments_data),
-                                                            c_size_t(commitments_data_len),
+        code = self.musig.schnorr_musig_receive_commitments(self.signer, commitments_data, len(commitments_data),
                                                             AggregatedCommitmentPointer(aggregated_commitment))
 
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
 
-        return aggregated_commitment
+        return bytes(aggregated_commitment.data)
 
-    def aggregate_signature(self, *signatures: Signature) -> AggregatedSignature:
-        signatures_data = []
+    def aggregate_signature(self, signatures: List[bytes]) -> bytes:
+        signatures_data = bytes()
         for signature in signatures:
-            signatures_data += [*signature.data]
-        signatures_data_len = len(signatures_data)
+            signatures_data += signature
 
         aggregated_signature = AggregatedSignature()
-        code = self.musig.schnorr_musig_receive_signature_shares(self.signer,
-                                                                 (c_ubyte * signatures_data_len)(*signatures_data),
-                                                                 c_size_t(signatures_data_len),
+        code = self.musig.schnorr_musig_receive_signature_shares(self.signer, signatures_data, len(signatures_data),
                                                                  AggregatedSignaturePointer(aggregated_signature))
 
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
 
-        return aggregated_signature
+        return bytes(aggregated_signature.data)
 
     def revoke(self):
         self.musig.schnorr_musig_delete_signer(self.signer)

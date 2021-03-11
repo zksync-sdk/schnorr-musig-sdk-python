@@ -12,19 +12,18 @@ class TestSchnorrMusig:
         musig = SchnorrMusig()
         signer = musig.create_signer_from_key(public_key)
         precommitment = signer.compute_precommitment(TestSchnorrMusig.SEED)
-        assert '93ae6e6df739d76c088755078ed857e95119909c97bdd5cdc8aa12286abc0984' == bytes(precommitment.data).hex()
+        assert '93ae6e6df739d76c088755078ed857e95119909c97bdd5cdc8aa12286abc0984' == precommitment.hex()
 
         commitment = signer.receive_precommitments(precommitment)
-        assert 'a18005f171a323d022a625e71aa53864ca6d1851a1fc50585b7627fba3f6c69f' == bytes(commitment.data).hex()
+        assert 'a18005f171a323d022a625e71aa53864ca6d1851a1fc50585b7627fba3f6c69f' == commitment.hex()
 
         aggregated_commitment = signer.receive_commitments(commitment)
-        assert 'a18005f171a323d022a625e71aa53864ca6d1851a1fc50585b7627fba3f6c69f' == bytes(
-            aggregated_commitment.data).hex()
+        assert 'a18005f171a323d022a625e71aa53864ca6d1851a1fc50585b7627fba3f6c69f' == aggregated_commitment.hex()
 
         signature = signer.sign(private_key, TestSchnorrMusig.MSG)
-        assert '02bae431c052b9e4f7c9b511904a577c7ba5e035625879d5253440793337f7ff' == bytes(signature.data).hex()
+        assert '02bae431c052b9e4f7c9b511904a577c7ba5e035625879d5253440793337f7ff' == signature.hex()
 
-        aggregate_signature = signer.aggregate_signature(signature)
+        aggregate_signature = signer.aggregate_signature([signature])
         assert musig.verify_by_public_keys(TestSchnorrMusig.MSG, aggregate_signature, public_key)
 
     def test_multiple(self):
@@ -70,10 +69,10 @@ class TestSchnorrMusig:
 
         aggregated_signatures = []
         for signer in signers:
-            aggregated_signatures.append(signer.aggregate_signature(*signatures))
+            aggregated_signatures.append(signer.aggregate_signature(signatures))
 
         for signature in aggregated_signatures:
-            assert [*aggregated_signatures[0].data] == [*signature.data]
+            assert aggregated_signatures[0] == signature
 
         assert musig.verify_by_public_keys(TestSchnorrMusig.MSG, aggregated_signatures[0], all_public_keys)
 

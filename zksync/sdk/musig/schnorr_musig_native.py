@@ -125,6 +125,7 @@ class SchnorrMusigNative(ctypes.CDLL):
     def schnorr_musig_compute_precommitment(self, signer: MusigSignerPointer, seed: c_uint32 * STANDARD_ENCODING_LENGTH,
                                             seed_len: c_size_t, precommitment: PrecommitmentPointer) -> MusigRes:
         pass
+
     @abc.abstractmethod
     def schnorr_musig_receive_precommitments(self, signer: MusigSignerPointer,
                                              input: c_ubyte * STANDARD_ENCODING_LENGTH,

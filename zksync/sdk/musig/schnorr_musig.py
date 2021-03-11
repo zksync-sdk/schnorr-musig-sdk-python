@@ -5,7 +5,6 @@ from zksync.sdk.musig.schnorr_musig_native import STANDARD_ENCODING_LENGTH
 from zksync.sdk.musig.schnorr_musig_native import SchnorrMusigLoader
 from zksync.sdk.musig.schnorr_musig_signer import AggregatedPublicKey
 from zksync.sdk.musig.schnorr_musig_signer import AggregatedPublicKeyPointer
-from zksync.sdk.musig.schnorr_musig_signer import AggregatedSignature
 from zksync.sdk.musig.schnorr_musig_signer import MusigRes
 from zksync.sdk.musig.schnorr_musig_signer import SchnorrMusigSigner
 
@@ -33,10 +32,10 @@ class SchnorrMusig:
         signer = self.musig.schnorr_musig_new_signer(public_key, len(public_key), 0)
         return SchnorrMusigSigner(self.musig, signer, public_key)
 
-    def verify_by_public_keys(self, message: bytes, signature: AggregatedSignature, public_keys: bytes) -> bool:
+    def verify_by_public_keys(self, message: bytes, signature: bytes, public_keys: bytes) -> bool:
 
-        code = self.musig.schnorr_musig_verify(message, len(message), public_keys, len(public_keys), signature.data,
-                                               len(signature.data))
+        code = self.musig.schnorr_musig_verify(message, len(message), public_keys, len(public_keys), signature,
+                                               len(signature))
 
         if code == MusigRes.OK:
             return True
@@ -45,10 +44,9 @@ class SchnorrMusig:
         else:
             raise SchnorrMusigError(code)
 
-    def verify_by_agg_public_key(self, message: bytes, signature: AggregatedSignature,
-                                 aggregated_public_keys: AggregatedPublicKey) -> bool:
-        code = self.musig.schnorr_musig_verify(message, len(message), aggregated_public_keys.data,
-                                               len(aggregated_public_keys.data), signature.data, len(signature.data))
+    def verify_by_agg_public_key(self, message: bytes, signature: bytes, aggregated_public_keys: bytes) -> bool:
+        code = self.musig.schnorr_musig_verify(message, len(message), aggregated_public_keys,
+                                               len(aggregated_public_keys), signature, len(signature))
 
         if code == MusigRes.OK:
             return True
@@ -58,7 +56,7 @@ class SchnorrMusig:
             raise SchnorrMusigError(code)
         pass
 
-    def aggregate_public_keys(self, public_keys: bytes) -> AggregatedPublicKey:
+    def aggregate_public_keys(self, public_keys: bytes) -> bytes:
 
         aggregated_public_key = AggregatedPublicKey()
         code = self.musig.schnorr_musig_aggregate_pubkeys(public_keys, len(public_keys),
@@ -67,4 +65,4 @@ class SchnorrMusig:
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
 
-        return aggregated_public_key
+        return bytes(aggregated_public_key.data)

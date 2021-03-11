@@ -61,7 +61,7 @@ class SchnorrMusigSigner:
 
         return bytes(aggregated_commitment.data)
 
-    def aggregate_signature(self, signatures: List[bytes]) -> bytes:
+    def aggregate_signature(self, *signatures: bytes) -> bytes:
         signatures_data = bytes()
         for signature in signatures:
             signatures_data += signature

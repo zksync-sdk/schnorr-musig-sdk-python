@@ -23,7 +23,7 @@ class TestSchnorrMusig:
         signature = signer.sign(private_key, TestSchnorrMusig.MSG)
         assert '02bae431c052b9e4f7c9b511904a577c7ba5e035625879d5253440793337f7ff' == signature.hex()
 
-        aggregate_signature = signer.aggregate_signature([signature])
+        aggregate_signature = signer.aggregate_signature(signature)
         assert musig.verify_by_public_keys(TestSchnorrMusig.MSG, aggregate_signature, public_key)
 
     def test_multiple(self):
@@ -69,7 +69,7 @@ class TestSchnorrMusig:
 
         aggregated_signatures = []
         for signer in signers:
-            aggregated_signatures.append(signer.aggregate_signature(signatures))
+            aggregated_signatures.append(signer.aggregate_signature(*signatures))
 
         for signature in aggregated_signatures:
             assert aggregated_signatures[0] == signature

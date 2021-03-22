@@ -1,14 +1,13 @@
 from zksync.sdk.musig.schnorr_musig_error import SchnorrMusigError
 from zksync.sdk.musig.schnorr_musig_native import *
-from typing import List
 
 
 class SchnorrMusigSigner:
 
-    def __init__(self, musig: SchnorrMusigNative, signer: MusigSignerPointer, public_key: bytes) -> None:
+    def __init__(self, musig: SchnorrMusigNative, signer: MusigSignerPointer, public_keys: bytes) -> None:
         self.musig = musig
         self.signer = signer
-        self.public_key = public_key
+        self.public_keys = public_keys
 
     def sign(self, private_key: bytes, message: bytes) -> bytes:
         signature = Signature()
@@ -74,6 +73,17 @@ class SchnorrMusigSigner:
             raise SchnorrMusigError(code)
 
         return bytes(aggregated_signature.data)
+
+    def verify(self, message: bytes, signature: bytes) -> bool:
+        code = self.musig.schnorr_musig_verify(message, len(message), self.public_keys, len(self.public_keys),
+                                               signature, len(signature))
+
+        if code == MusigRes.OK:
+            return True
+        elif code == MusigRes.SIGNATURE_VERIFICATION_FAILED:
+            return False
+        else:
+            raise SchnorrMusigError(code)
 
     def revoke(self):
         self.musig.schnorr_musig_delete_signer(self.signer)

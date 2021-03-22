@@ -10,7 +10,7 @@ class TestSchnorrMusig:
         public_key = bytes.fromhex('179c3a59147d30316c886628852348c9b42a18b821084ac9ef79bd73e9b94e8d')
 
         musig = SchnorrMusig()
-        signer = musig.create_signer_from_key(public_key)
+        signer = musig.create_signer(public_key)
         precommitment = signer.compute_precommitment(TestSchnorrMusig.SEED)
         assert '93ae6e6df739d76c088755078ed857e95119909c97bdd5cdc8aa12286abc0984' == precommitment.hex()
 
@@ -24,7 +24,8 @@ class TestSchnorrMusig:
         assert '02bae431c052b9e4f7c9b511904a577c7ba5e035625879d5253440793337f7ff' == signature.hex()
 
         aggregate_signature = signer.aggregate_signature(signature)
-        assert musig.verify_by_public_keys(TestSchnorrMusig.MSG, aggregate_signature, public_key)
+        assert musig.verify(TestSchnorrMusig.MSG, aggregate_signature, public_key)
+        assert signer.verify(TestSchnorrMusig.MSG, aggregate_signature)
 
     def test_multiple(self):
         musig = SchnorrMusig()
@@ -49,7 +50,7 @@ class TestSchnorrMusig:
 
         signers = []
         for index in range(len(public_keys)):
-            signers.append(musig.create_signer_from_encoded_keys(all_public_keys, index))
+            signers.append(musig.create_signer(all_public_keys, index))
 
         precommitments = []
         for signer in signers:
@@ -74,7 +75,9 @@ class TestSchnorrMusig:
         for signature in aggregated_signatures:
             assert aggregated_signatures[0] == signature
 
-        assert musig.verify_by_public_keys(TestSchnorrMusig.MSG, aggregated_signatures[0], all_public_keys)
+        assert musig.verify(TestSchnorrMusig.MSG, aggregated_signatures[0], all_public_keys)
 
         aggregated_public_key = musig.aggregate_public_keys(all_public_keys)
-        assert musig.verify_by_agg_public_key(TestSchnorrMusig.MSG, aggregated_signatures[0], aggregated_public_key)
+        assert musig.verify(TestSchnorrMusig.MSG, aggregated_signatures[0], aggregated_public_key)
+        for signer in signers:
+            assert signer.verify(TestSchnorrMusig.MSG, aggregated_signatures[0])

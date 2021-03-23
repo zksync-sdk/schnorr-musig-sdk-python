@@ -4,10 +4,10 @@ from zksync.sdk.musig.schnorr_musig_native import *
 
 class SchnorrMusigSigner:
 
-    def __init__(self, musig: SchnorrMusigNative, signer: MusigSignerPointer, public_keys: bytes) -> None:
+    def __init__(self, musig: SchnorrMusigNative, signer: MusigSignerPointer, encoded_public_keys: bytes) -> None:
         self.musig = musig
         self.signer = signer
-        self.public_keys = public_keys
+        self.encoded_public_keys = encoded_public_keys
 
     def sign(self, private_key: bytes, message: bytes) -> bytes:
         signature = Signature()
@@ -75,7 +75,7 @@ class SchnorrMusigSigner:
         return bytes(aggregated_signature.data)
 
     def verify(self, message: bytes, signature: bytes) -> bool:
-        code = self.musig.schnorr_musig_verify(message, len(message), self.public_keys, len(self.public_keys),
+        code = self.musig.schnorr_musig_verify(message, len(message), self.encoded_public_keys, len(self.encoded_public_keys),
                                                signature, len(signature))
 
         if code == MusigRes.OK:

@@ -10,7 +10,7 @@ class TestSchnorrMusig:
         public_key = bytes.fromhex('179c3a59147d30316c886628852348c9b42a18b821084ac9ef79bd73e9b94e8d')
 
         musig = SchnorrMusig()
-        signer = musig.create_signer([public_key])
+        signer = musig.create_signer([public_key], 0)
         precommitment = signer.compute_precommitment(TestSchnorrMusig.SEED)
         assert '93ae6e6df739d76c088755078ed857e95119909c97bdd5cdc8aa12286abc0984' == precommitment.hex()
 
@@ -71,9 +71,9 @@ class TestSchnorrMusig:
         for signature in aggregated_signatures:
             assert aggregated_signatures[0] == signature
 
-        assert musig.verify(TestSchnorrMusig.MSG, aggregated_signatures[0], *public_keys)
+        assert musig.verify(TestSchnorrMusig.MSG, aggregated_signatures[0], public_keys)
 
-        aggregated_public_key = musig.aggregate_public_keys(public_keys)
+        aggregated_public_key = musig.aggregate_public_keys(*public_keys)
         assert musig.verify(TestSchnorrMusig.MSG, aggregated_signatures[0], aggregated_public_key)
         for signer in signers:
             assert signer.verify(TestSchnorrMusig.MSG, aggregated_signatures[0])

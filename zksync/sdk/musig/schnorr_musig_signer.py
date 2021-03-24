@@ -1,18 +1,27 @@
+from __future__ import annotations
+
 from zksync.sdk.musig.schnorr_musig_error import SchnorrMusigError
 from zksync.sdk.musig.schnorr_musig_native import *
+
+from typing import List
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from zksync.sdk.musig.schnorr_musig import SchnorrMusig
 
 
 class SchnorrMusigSigner:
 
-    def __init__(self, musig: SchnorrMusigNative, signer: MusigSignerPointer, encoded_public_keys: bytes) -> None:
+    def __init__(self, musig: SchnorrMusig, signer: MusigSignerPointer, public_keys: List[bytes]) -> None:
         self.musig = musig
         self.signer = signer
-        self.encoded_public_keys = encoded_public_keys
+        self.public_keys = public_keys
+        self.aggregated_public_key = self.musig.aggregate_public_keys(*public_keys)
 
     def sign(self, private_key: bytes, message: bytes) -> bytes:
         signature = Signature()
-        code = self.musig.schnorr_musig_sign(self.signer, private_key, len(private_key), message, len(message),
-                                             SignaturePointer(signature))
+        code = self.musig.native.schnorr_musig_sign(self.signer, private_key, len(private_key), message, len(message),
+                                                    SignaturePointer(signature))
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
 
@@ -24,7 +33,7 @@ class SchnorrMusigSigner:
                      range(seed_len)]
 
         precommitment = Precommitment()
-        code = self.musig.schnorr_musig_compute_precommitment(
+        code = self.musig.native.schnorr_musig_compute_precommitment(
             self.signer, (c_uint32 * seed_len)(*seed_data), seed_len, PrecommitmentPointer(precommitment))
 
         if code != MusigRes.OK:
@@ -38,8 +47,9 @@ class SchnorrMusigSigner:
             precommitments_data += precommitment
 
         commitment = Commitment()
-        code = self.musig.schnorr_musig_receive_precommitments(self.signer, precommitments_data,
-                                                               len(precommitments_data), CommitmentPointer(commitment))
+        code = self.musig.native.schnorr_musig_receive_precommitments(self.signer, precommitments_data,
+                                                                      len(precommitments_data),
+                                                                      CommitmentPointer(commitment))
 
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
@@ -52,8 +62,8 @@ class SchnorrMusigSigner:
             commitments_data += commitment
 
         aggregated_commitment = AggregatedCommitment()
-        code = self.musig.schnorr_musig_receive_commitments(self.signer, commitments_data, len(commitments_data),
-                                                            AggregatedCommitmentPointer(aggregated_commitment))
+        code = self.musig.native.schnorr_musig_receive_commitments(self.signer, commitments_data, len(commitments_data),
+                                                                   AggregatedCommitmentPointer(aggregated_commitment))
 
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
@@ -66,8 +76,10 @@ class SchnorrMusigSigner:
             signatures_data += signature
 
         aggregated_signature = AggregatedSignature()
-        code = self.musig.schnorr_musig_receive_signature_shares(self.signer, signatures_data, len(signatures_data),
-                                                                 AggregatedSignaturePointer(aggregated_signature))
+        code = self.musig.native.schnorr_musig_receive_signature_shares(self.signer, signatures_data,
+                                                                        len(signatures_data),
+                                                                        AggregatedSignaturePointer(
+                                                                            aggregated_signature))
 
         if code != MusigRes.OK:
             raise SchnorrMusigError(code)
@@ -75,8 +87,9 @@ class SchnorrMusigSigner:
         return bytes(aggregated_signature.data)
 
     def verify(self, message: bytes, signature: bytes) -> bool:
-        code = self.musig.schnorr_musig_verify(message, len(message), self.encoded_public_keys, len(self.encoded_public_keys),
-                                               signature, len(signature))
+        code = self.musig.native.schnorr_musig_verify(message, len(message), self.aggregated_public_key,
+                                                      len(self.aggregated_public_key),
+                                                      signature, len(signature))
 
         if code == MusigRes.OK:
             return True
@@ -86,4 +99,4 @@ class SchnorrMusigSigner:
             raise SchnorrMusigError(code)
 
     def revoke(self):
-        self.musig.schnorr_musig_delete_signer(self.signer)
+        self.musig.native.schnorr_musig_delete_signer(self.signer)

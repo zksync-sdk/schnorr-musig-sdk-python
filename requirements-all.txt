@@ -1,0 +1,5 @@
+# Runtime requirements
+--requirement requirements.txt
+
+# Compile requirements
+--requirement requirements-dev.txt

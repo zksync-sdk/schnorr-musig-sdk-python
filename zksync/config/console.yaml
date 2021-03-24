@@ -1,0 +1,23 @@
+version: 1
+formatters:
+  simple:
+    (): 'colorlog.ColoredFormatter'
+    format: '%(asctime)s %(blue)s%(name)-30s %(log_color)s%(levelname)-8s %(message)s'
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: simple
+    stream: ext://sys.stdout
+loggers:
+  zksync:
+    level: WARNING
+    handlers: [console]
+    propagate: no
+  __main__:
+    level: WARNING
+    handlers: [console]
+    propagate: no
+root:
+  level: INFO
+  handlers: [console]

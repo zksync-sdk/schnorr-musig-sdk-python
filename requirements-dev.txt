@@ -9,11 +9,11 @@ pep8==1.7.1
 pyflakes==2.2.0
 
 # Documentation (TBC)
-docutils==0.11
+docutils==0.16
 Jinja2==2.7.1
 MarkupSafe==0.19
-Pygments==1.6
-Sphinx==1.2
+Pygments==2.0
+Sphinx==3.5.4
 
 # Miscellaneous
 colorama==0.4.3

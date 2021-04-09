@@ -165,7 +165,10 @@ class SchnorrMusigLoader:
 
     @staticmethod
     def load() -> SchnorrMusigNative:
-        library: SchnorrMusigNative = ctypes.CDLL(ctypes.util.find_library(LIBRARY_NAME))
+        libPath = ctypes.util.find_library(LIBRARY_NAME)
+        if libPath == None:
+            libPath = "./libmusig_c.so"
+        library: SchnorrMusigNative = ctypes.CDLL(libPath)
         library.schnorr_musig_new_signer.restype = MusigSignerPointer
         library.schnorr_musig_aggregate_pubkeys.restype = MusigRes
         library.schnorr_musig_compute_precommitment.restype = MusigRes

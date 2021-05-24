@@ -1,0 +1,54 @@
+name: Test Python SDK library
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build_native:
+    name: Build depends native library
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Set up Rust environment
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Install dependencies
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+      - name: Build project using cargo
+        run: cargo build --release
+        working-directory: schnorr-musig-c
+      - name: Save artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: schnorr-musig-c-lib
+          path: schnorr-musig-c/target/release/*musig_c.*
+  test:
+    name: Test Python project
+    runs-on: ubuntu-latest
+    needs: build_native
+    steps:
+      - uses: actions/checkout@v2
+      - name: Load native libraries
+        uses: actions/download-artifact@v2
+        with:
+          name: schnorr-musig-c-lib
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - run: pip3 install -r requirements-all.txt
+        name: Install dependencies
+      - run: python3 setup.py test

@@ -1,0 +1,3 @@
+[submodule "schnorr-musig-c"]
+	path = schnorr-musig-c
+	url = https://github.com/zksync-sdk/schnorr-musig-c.git
